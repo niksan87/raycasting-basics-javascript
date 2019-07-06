@@ -1,4 +1,4 @@
-const TILE_SIZE = 32;
+const TILE_SIZE = 64;
 const MAP_NUM_ROWS = 11;
 const MAP_NUM_COLS = 15;
 
@@ -9,8 +9,10 @@ const PRIMARY_COLOR = "#222";
 const SECONDARY_COLOR = "#fff";
 
 const FOV_ANGLE = 60 * (Math.PI / 180);
-const WALL_STRIP_WIDTH = 20;
+const WALL_STRIP_WIDTH = 1;
 const NUM_OF_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
+
+const MINIMAP_SCALE_FACTOR = 0.2;
 
 class Map {
     constructor() {
@@ -46,7 +48,11 @@ class Map {
                 const tileColor = this.grid[i][j] ? PRIMARY_COLOR : SECONDARY_COLOR;
                 stroke(PRIMARY_COLOR);
                 fill(tileColor);
-                rect(tileX, tileY, TILE_SIZE, TILE_SIZE);
+                rect(MINIMAP_SCALE_FACTOR * tileX,
+                     MINIMAP_SCALE_FACTOR * tileY,
+                     MINIMAP_SCALE_FACTOR * TILE_SIZE,
+                     MINIMAP_SCALE_FACTOR * TILE_SIZE
+                );
             }
         }
     }
@@ -55,13 +61,13 @@ class Map {
 class Player {
     constructor() {
         this.x = WINDOW_WIDTH / 2;
-        this.y = WINDOW_HEIGHT / 2;
-        this.radius = 3;
+        this.y = WINDOW_HEIGHT / 7;
+        this.radius = 4;
         this.turnDirection = 0; // -1 if left, +1 if right
         this.walkDirection = 0; // -1 if bacl, +1 if front
         this.rotationAngle = Math.PI / 2;
-        this.moveSpeed = 2.0;
-        this.rotationSpeed = 2 * (Math.PI / 180);
+        this.moveSpeed = 4.0;
+        this.rotationSpeed = 3 * (Math.PI / 180);
     }
 
     update() {
@@ -77,15 +83,19 @@ class Player {
 
     render() {
         noStroke();
-        fill("red");
-        circle(this.x, this.y, this.radius);
-        //stroke("red");
-        // line(
-        //     this.x,
-        //     this.y,
-        //     this.x + Math.cos(this.rotationAngle) * 30,
-        //     this.y + Math.sin(this.rotationAngle) * 30
-        // );
+        fill("blue");
+        circle(
+            MINIMAP_SCALE_FACTOR * this.x,
+            MINIMAP_SCALE_FACTOR * this.y,
+            MINIMAP_SCALE_FACTOR * this.radius
+        );
+        stroke("red");
+        line(
+            MINIMAP_SCALE_FACTOR * this.x,
+            MINIMAP_SCALE_FACTOR * this.y,
+            MINIMAP_SCALE_FACTOR * (this.x + Math.cos(this.rotationAngle) * 30),
+            MINIMAP_SCALE_FACTOR * (this.y + Math.sin(this.rotationAngle) * 30)
+        );
     }
 }
 
@@ -194,12 +204,12 @@ class Ray {
     }
 
     render() {
-        stroke("rgba(255, 0, 0, 0.3)");
+        stroke("orange");
         line(
-            player.x,
-            player.y,
-            this.wallHitX,
-            this.wallHitY
+            MINIMAP_SCALE_FACTOR * player.x,
+            MINIMAP_SCALE_FACTOR * player.y,
+            MINIMAP_SCALE_FACTOR * this.wallHitX,
+            MINIMAP_SCALE_FACTOR * this.wallHitY
         )
     }
 }
@@ -247,7 +257,32 @@ function castAllRays() {
 }
 
 function distanceBetweenPoints(x1, y1, x2, y2) {
-    return Math.sqrt((x2 - x1) * (x2 - x1) * (y2 - y1) * (y2 - y1));
+    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
+function render3DProjectedWalls() {
+    for (let i = 0; i < NUM_OF_RAYS; i++) {
+        const ray = rays[i];
+        const rayDistance = ray.distance;
+        const distanceProjectionPlane = (WINDOW_WIDTH / 2) / Math.tan(FOV_ANGLE / 2);
+        const wallStripHeight = (TILE_SIZE / rayDistance) * distanceProjectionPlane;
+        fill("white");
+        noStroke();
+        rect(
+            i * WALL_STRIP_WIDTH,
+            (WINDOW_HEIGHT / 2) - (wallStripHeight / 2),
+            WALL_STRIP_WIDTH,
+            wallStripHeight
+        );
+    }
+}
+
+function normalizeAngle(angle) {
+    angle = angle % (2 * Math.PI);
+    if (angle < 0) {
+        angle = (2 * Math.PI) + angle;
+    }
+    return angle;
 }
 
 function setup() {
@@ -259,20 +294,13 @@ function update() {
     castAllRays();
 }
 
-function normalizeAngle(angle) {
-    angle = angle % (2 * Math.PI);
-    if (angle < 0) {
-        angle = (2 * Math.PI) + angle;
-    }
-    return angle;
-}
-
 function draw() {
+    clear("#212121");
     update();
+    render3DProjectedWalls();
     grid.render();
     for (ray of rays) {
         ray.render();
     }
     player.render();
 }
-
