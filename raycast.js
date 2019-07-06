@@ -12,7 +12,7 @@ const FOV_ANGLE = 60 * (Math.PI / 180);
 const WALL_STRIP_WIDTH = 1;
 const NUM_OF_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
 
-const MINIMAP_SCALE_FACTOR = 0.2;
+const MINIMAP_SCALE_FACTOR = 0.25;
 
 class Map {
     constructor() {
@@ -258,8 +258,9 @@ function render3DProjectedWalls() {
         const correctWallDistance = ray.distance * Math.cos(ray.rayAngle - player.rotationAngle);
         const distanceProjectionPlane = (WINDOW_WIDTH / 2) / Math.tan(FOV_ANGLE / 2);
         const wallStripHeight = (TILE_SIZE / correctWallDistance) * distanceProjectionPlane;
-        const alpha = (250 / correctWallDistance);
-        fill(`rgba(255, 255, 255, ${alpha})`);
+        const alpha = 1.0; // (250 / correctWallDistance);
+        const color = ray.wasHitVertical ? 255 : 220;
+        fill(`rgba(${color}, ${color}, ${color}, ${alpha})`);
         noStroke();
         rect(
             i * WALL_STRIP_WIDTH,
