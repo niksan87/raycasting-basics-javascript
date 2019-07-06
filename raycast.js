@@ -263,9 +263,9 @@ function distanceBetweenPoints(x1, y1, x2, y2) {
 function render3DProjectedWalls() {
     for (let i = 0; i < NUM_OF_RAYS; i++) {
         const ray = rays[i];
-        const rayDistance = ray.distance;
+        const correctWallDistance = ray.distance * Math.cos(ray.rayAngle - player.rotationAngle);
         const distanceProjectionPlane = (WINDOW_WIDTH / 2) / Math.tan(FOV_ANGLE / 2);
-        const wallStripHeight = (TILE_SIZE / rayDistance) * distanceProjectionPlane;
+        const wallStripHeight = (TILE_SIZE / correctWallDistance) * distanceProjectionPlane;
         fill("white");
         noStroke();
         rect(
